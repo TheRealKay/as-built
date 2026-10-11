@@ -13,6 +13,8 @@
   "freezeTime": "2026-10-10T19:30:00Z",
   "randomSeed": 1,
   "ready": null,
+  "serviceWorkers": "block",
+  "stepTimeout": 30000,
 
   "routes": [
     { "match": "https://cdn.jsdelivr.net/**", "file": "stub.js" },

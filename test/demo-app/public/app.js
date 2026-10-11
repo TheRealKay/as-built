@@ -25,4 +25,15 @@ async function home() {
   };
 }
 
-window.__signedIn ? home() : login();
+// Like Moodies' account menu: the menu only opens once a service worker is ready.
+function menuPage() {
+  app.innerHTML = `<h1>Account</h1><button id="menu-btn">Menu</button>`;
+  document.getElementById('menu-btn').onclick = async () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+    await navigator.serviceWorker.ready;
+    app.insertAdjacentHTML('beforeend', '<div class="card" id="menu"><strong>Settings</strong><div class="muted">Sign out</div></div>');
+  };
+}
+
+if (location.pathname === '/menu') menuPage();
+else window.__signedIn ? home() : login();

@@ -91,6 +91,8 @@ Full example: [`templates/as-built.config.example.json`](templates/as-built.conf
 | `freezeTime` | The fixed instant `Date` returns (`new Date()`, `Date.now()`). `false` turns it off. |
 | `randomSeed` | Seed for `Math.random`, default `1`. `false` turns it off. |
 | `ready` | Optional selector to wait for after every fresh page load. |
+| `serviceWorkers` | `"block"` (default, most deterministic) or `"allow"`. Use `"allow"` when the app awaits `navigator.serviceWorker.ready` (for example before opening a menu or asking for push): with workers blocked that promise never resolves. |
+| `stepTimeout` | Milliseconds a step (click, wait for a selector, …) may take before it fails the run. Default `30000`. |
 | `routes` | Requests to answer locally: `match` (Playwright glob or URL) plus `file` (relative to the config), `json`, or `body` + `contentType`. |
 | `screens` | In order. `name` (letters, digits, `_ . -`), `title`, `path` (default `/`), `fullPage`. A screen starts a fresh page, with `init` copied onto `window` before any app script runs, unless it has `"continue": true`, which keeps the previous screen's page and state. |
 | `screens[].steps` | `{ "click": sel }`, `{ "fill": sel, "value": "text" }`, `{ "press": "Enter", "selector"?: sel }`, `{ "wait": 150 }` (ms) or `{ "wait": sel }`, `{ "evaluate": "js string" }`, `{ "scrollTop": true or sel }`, `{ "goto": "/path" }`. |
@@ -133,8 +135,13 @@ A new commit with no changed images only refreshes the title note (about 10k).
   shoot fails loudly with the page error; the run then counts as "config needs fixing" (+20k) and
   updates the stub.
 - **Determinism is the whole trick.** The clock, `Math.random`, animations, the caret, timezone and
-  locale are fixed, and service workers are blocked. If two shoots differ, something live is still
-  leaking in (real network data, a `performance.now()` driven animation, a remote font): stub it.
+  locale are fixed, and service workers are blocked (unless `serviceWorkers` is `"allow"`). If two
+  shoots differ, something live is still leaking in (real network data, a `performance.now()`
+  driven animation, a remote font): stub it.
+- **A screen identical to the one before it gets a warning.** That usually means a step had no
+  visible effect, for example a click whose handler waits on something that never happens (such as
+  `navigator.serviceWorker.ready` with service workers blocked). Check the steps, or set
+  `serviceWorkers` to `"allow"`.
 - An Artifact `read` with `out_dir` saves to `<out_dir>/<published path>`: pass `out_dir=$W/canvas`
   to get `$W/canvas/project/canvas.json`. Passing `.../project` nests it twice.
 - Keep `pkill` and other process killing in separate shell commands from git commits. A combined

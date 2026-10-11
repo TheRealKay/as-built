@@ -8,10 +8,13 @@
 // The app is either a static folder (config.app.static, served by a built-in server) or a
 // start command (config.app.start + config.app.url, waited for and stopped afterwards).
 // Each screen gets a fresh browser context with a frozen clock, fixed timezone, seeded
-// Math.random and stubbed network routes, so the same code always gives the same PNG bytes.
+// Math.random, stubbed network routes and (by default) blocked service workers, so the same
+// code always gives the same PNG bytes. Set config.serviceWorkers to "allow" for apps that
+// await navigator.serviceWorker.ready.
 // Output: <out>/<Name>.png for every screen and <out>/manifest.json
 //   { "<Name>": { "file", "title", "sha256", "w", "h" } }
 // Exits non-zero if any page error, failed step or missing route file happens (unless --allow-errors).
+// Warns (without failing) when a screen's image is identical to the previous screen's.
 
 import { createServer } from 'node:http';
 import { createHash } from 'node:crypto';
@@ -176,7 +179,11 @@ export async function shoot({ configPath, srcDir, outDir, only = null, allowErro
   const seed = config.randomSeed === false ? null : (config.randomSeed ?? 1);
   const timezoneId = config.timezone || 'UTC';
   const locale = config.locale || 'en-GB';
+  const serviceWorkers = config.serviceWorkers ?? 'block';
+  if (!['allow', 'block'].includes(serviceWorkers)) throw new Error(`serviceWorkers must be "allow" or "block", got "${serviceWorkers}"`);
+  const stepTimeout = config.stepTimeout ?? 30000;
   const errors = [];
+  const warnings = [];
   mkdirSync(outDir, { recursive: true });
 
   // Route stubs: read every file up front so a missing one fails before any browser work.
@@ -220,16 +227,18 @@ export async function shoot({ configPath, srcDir, outDir, only = null, allowErro
       timezoneId, locale,
       colorScheme: config.colorScheme || 'light',
       reducedMotion: 'reduce',
-      serviceWorkers: 'block',
+      serviceWorkers,
     });
     await context.addInitScript(initScript, { fixedTime, seed, init: init || {} });
     for (const r of routes) await context.route(r.match, route => route.fulfill({ status: r.status, contentType: r.type, body: r.body }));
     page = await context.newPage();
+    page.setDefaultTimeout(stepTimeout);
     page.on('pageerror', e => errors.push(`[${current}] page error: ${e.message}`));
     if (config.failOnConsoleError) page.on('console', m => { if (m.type() === 'error') errors.push(`[${current}] console error: ${m.text()}`); });
   };
 
   let current = '';
+  let previous = null;
   try {
     const screens = config.screens || [];
     if (!screens.length) throw new Error('config.screens is empty');
@@ -260,6 +269,13 @@ export async function shoot({ configPath, srcDir, outDir, only = null, allowErro
         w: Math.round(width / viewport.scale), h: Math.round(height / viewport.scale),
       };
       log(`shot ${screen.name} ${manifest[screen.name].w}x${manifest[screen.name].h} ${manifest[screen.name].sha256.slice(0, 12)}`);
+      // Identical to the screen before usually means a step had no visible effect (e.g. it waits on something that never happens).
+      if (previous && manifest[previous].sha256 === manifest[screen.name].sha256) {
+        const w = `[${screen.name}] warning: image is identical to the previous screen (${previous}); a step probably had no visible effect`;
+        warnings.push(w);
+        log(w);
+      }
+      previous = screen.name;
     }
   } finally {
     if (context) await context.close().catch(() => {});
@@ -276,7 +292,7 @@ export async function shoot({ configPath, srcDir, outDir, only = null, allowErro
       throw err;
     }
   }
-  return { manifest, errors };
+  return { manifest, errors, warnings };
 }
 
 const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);

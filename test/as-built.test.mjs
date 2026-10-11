@@ -37,6 +37,7 @@ test('shooting the demo app twice gives identical hashes', { timeout: 120000 }, 
   first = a.manifest;
   assert.deepEqual(Object.keys(a.manifest), ['Login', 'Home', 'Draft', 'HomeDirect']);
   assert.deepEqual(hashes(a.manifest), hashes(b.manifest));
+  assert.deepEqual(a.warnings, []);
   for (const [name, m] of Object.entries(a.manifest)) {
     assert.match(m.sha256, /^[0-9a-f]{64}$/);
     assert.equal(m.w, 390);
@@ -74,6 +75,38 @@ test('page errors fail the run loudly', { timeout: 120000 }, async () => {
   );
   const missing = writeConfig('missing-file', { routes: [{ match: '**/backend.js', file: 'nope.js' }] });
   await assert.rejects(shoot({ configPath: missing, srcDir: demo, outDir: join(tmp, 'x'), log: quiet }), /Route file not found/);
+});
+
+test('serviceWorkers: "block" hangs an app that awaits serviceWorker.ready, "allow" works', { timeout: 120000 }, async () => {
+  const screens = [
+    { name: 'Account', title: 'Account', path: '/menu' },
+    { name: 'Menu', title: 'Menu', continue: true, steps: [{ click: '#menu-btn' }, { wait: 500 }] },
+  ];
+  // Blocked (the default): the menu never opens, so Menu looks exactly like Account → warning
+  const blocked = await shoot({ configPath: writeConfig('sw-block', { screens }), srcDir: demo, outDir: join(tmp, 'sw-block'), log: quiet });
+  assert.equal(blocked.manifest.Menu.sha256, blocked.manifest.Account.sha256);
+  assert.equal(blocked.warnings.length, 1);
+  assert.match(blocked.warnings[0], /^\[Menu\] warning: image is identical to the previous screen \(Account\)/);
+
+  // Waiting for the menu with service workers blocked times out after stepTimeout and fails the run
+  const waitScreens = [screens[0], { ...screens[1], steps: [{ click: '#menu-btn' }, { wait: '#menu' }] }];
+  await assert.rejects(
+    shoot({ configPath: writeConfig('sw-block-wait', { screens: waitScreens, stepTimeout: 1500 }), srcDir: demo, outDir: join(tmp, 'sw-block-wait'), log: quiet }),
+    e => e.errors?.some(x => x.startsWith('[Menu] step failed')),
+  );
+
+  // Allowed: the menu opens, no warning, and two runs still match
+  const allowCfg = writeConfig('sw-allow', { screens: waitScreens, serviceWorkers: 'allow' });
+  const a = await shoot({ configPath: allowCfg, srcDir: demo, outDir: join(tmp, 'sw-allow-a'), log: quiet });
+  const b = await shoot({ configPath: allowCfg, srcDir: demo, outDir: join(tmp, 'sw-allow-b'), log: quiet });
+  assert.notEqual(a.manifest.Menu.sha256, a.manifest.Account.sha256);
+  assert.deepEqual(a.warnings, []);
+  assert.deepEqual(hashes(a.manifest), hashes(b.manifest));
+
+  await assert.rejects(
+    shoot({ configPath: writeConfig('sw-bad', { serviceWorkers: 'yes' }), srcDir: demo, outDir: join(tmp, 'sw-bad'), log: quiet }),
+    /serviceWorkers must be "allow" or "block"/,
+  );
 });
 
 test('write-boards updates the canvas index and writes only changed artboards', () => {

@@ -1,7 +1,7 @@
 {
   "name": "as-built",
   "displayName": "As-Built",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Keeps a page of a Claude Design canvas an exact mirror of the app on your main branch: screenshots every screen, uploads only what changed, and records the commit.",
   "author": {
     "name": "Kay (TheRealKay)",

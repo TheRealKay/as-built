@@ -43,6 +43,8 @@ Pick the flow: **Run** (default, "update the as-built", scheduled or post-merge 
    If main has no config yet (setup not merged), use the working-tree config with `--src $W/src`.
    If it fails (page errors, a step can't find its selector), the app has probably added a backend
    call or changed a screen: this run needs a config/stub fix (`--fix` below). Don't guess silently.
+   A warning that a screen is identical to the previous one means a step had no visible effect:
+   treat it like a failure and fix the steps (or `serviceWorkers`) before building.
 4. Artifact `read` the canvas with `paths` = `project/<prefix><Name>.dc.html` for every screen in the
    manifest that has a board on the page, `out_dir: "$W/canvas"`. Missing files are fine (new screens).
    Run `node plan.mjs --root $W/canvas --sha $SHA --manifest $W/shots/manifest.json --config <cfg>`
@@ -88,6 +90,8 @@ Ask only what you can't read from the repo. Defaults are in brackets.
 3. **Sample data.** Find every backend/SDK/config request the app makes on its screens. Write a stub
    module (e.g. `.claude/as-built/stub.js`) that answers each with fixed sample data and fake
    sign-in, and add `routes` entries for them. No real keys, emails or user data in the stub.
+   If the app awaits `navigator.serviceWorker.ready` anywhere on its screens (menus, push
+   prompts), set `"serviceWorkers": "allow"`; blocked workers make that promise hang forever.
 4. **Screens.** List the screens and how to reach each (`init` globals for signed-in state; `steps`:
    `click`, `fill`+`value`, `press`, `wait` ms or selector, `evaluate`, `scrollTop`, `goto`).
    Use `"continue": true` to carry state from the previous screen (e.g. Picker opened from Me).

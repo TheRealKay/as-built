@@ -1,0 +1,12 @@
+{
+  "name": "as-built",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Keep a Claude Design canvas page an exact mirror of what's on main.",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test test/as-built.test.mjs"
+  },
+  "engines": { "node": ">=18" }
+}

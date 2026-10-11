@@ -1,0 +1,37 @@
+{
+  "canvas": "https://claude.ai/artifact/<canvas-id>",
+  "page": "as-built",
+  "pageName": "As-Built",
+  "boardPrefix": "AsBuilt-",
+  "background": "#1d4b57",
+
+  "app": { "static": "public" },
+
+  "viewport": { "width": 390, "height": 844, "scale": 2 },
+  "timezone": "Europe/London",
+  "locale": "en-GB",
+  "freezeTime": "2026-10-10T19:30:00Z",
+  "randomSeed": 1,
+  "ready": null,
+
+  "routes": [
+    { "match": "https://cdn.jsdelivr.net/**", "file": "stub.js" },
+    { "match": "**/config.js", "body": "export default { apiUrl: 'https://example.invalid' };", "contentType": "text/javascript" },
+    { "match": "**/api/health", "json": { "ok": true } }
+  ],
+
+  "screens": [
+    { "name": "Login", "title": "Sign in", "init": { "__signedIn": false } },
+    { "name": "Home", "title": "Home", "init": { "__signedIn": true }, "steps": [ { "wait": "main" } ] },
+    { "name": "Settings", "title": "Settings", "continue": true,
+      "steps": [ { "click": "nav a[href='/settings']" }, { "wait": 150 }, { "scrollTop": true } ], "fullPage": true }
+  ],
+
+  "settings": {
+    "schedule": "daily+merges",
+    "cron": "CRON_TZ=Europe/London 52 7 * * *",
+    "autoBuildLimit": 50000,
+    "notify": ["chat"],
+    "triggerId": null
+  }
+}

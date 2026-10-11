@@ -1,0 +1,15 @@
+{
+  "name": "as-built",
+  "description": "As-Built: keep a Claude Design canvas page in step with what's on main.",
+  "owner": {
+    "name": "Kay (TheRealKay)",
+    "url": "https://github.com/TheRealKay"
+  },
+  "plugins": [
+    {
+      "name": "as-built",
+      "source": "./",
+      "description": "Mirror every app screen on main into a Claude Design canvas page, uploading only screens that changed."
+    }
+  ]
+}

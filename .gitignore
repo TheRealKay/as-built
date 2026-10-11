@@ -1,0 +1,5 @@
+node_modules/
+.as-built-work/
+test/.out/
+*.log
+.DS_Store

@@ -1,0 +1,35 @@
+{
+  "canvas": "https://claude.ai/artifact/<your-canvas-id>",
+  "page": "as-built",
+  "pageName": "As-Built",
+  "boardPrefix": "Live-",
+  "background": "#1d4b57",
+  "app": { "static": "public" },
+  "viewport": { "width": 390, "height": 844, "scale": 2 },
+  "timezone": "Europe/London",
+  "freezeTime": "2026-10-10T19:30:00Z",
+  "routes": [
+    { "match": "https://cdn.jsdelivr.net/**", "file": "stub.js" },
+    { "match": "**/config.js", "file": "fake-config.js" }
+  ],
+  "screens": [
+    { "name": "Login", "title": "Sign in", "init": { "__signedIn": false } },
+    { "name": "Who", "title": "Who's checking in", "init": { "__signedIn": true },
+      "steps": [ { "wait": "label.who-option" } ] },
+    { "name": "Mood", "title": "Pick a mood", "continue": true,
+      "steps": [ { "click": "label.who-option:first-of-type" }, { "wait": 150 } ] },
+    { "name": "Me", "title": "Me", "continue": true,
+      "steps": [ { "click": "nav [data-view='me']" }, { "wait": 150 }, { "scrollTop": true } ] },
+    { "name": "Picker", "title": "Mood picker", "continue": true,
+      "steps": [ { "click": "button.open-picker" }, { "wait": ".picker" } ] },
+    { "name": "History", "title": "History", "init": { "__signedIn": true },
+      "steps": [ { "click": "nav [data-view='history']" }, { "wait": ".entry" } ], "fullPage": true }
+  ],
+  "settings": {
+    "schedule": "daily+merges",
+    "cron": "CRON_TZ=Europe/London 52 7 * * *",
+    "autoBuildLimit": 50000,
+    "notify": ["chat", "push"],
+    "triggerId": null
+  }
+}

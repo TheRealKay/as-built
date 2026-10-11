@@ -1,0 +1,17 @@
+{
+  "canvas": "https://claude.ai/artifact/<canvas-id>",
+  "page": "as-built",
+  "pageName": "As-Built",
+  "app": { "static": "public" },
+  "viewport": { "width": 390, "height": 844, "scale": 2 },
+  "timezone": "Europe/London",
+  "freezeTime": "2026-10-10T19:30:00Z",
+  "routes": [ { "match": "**/backend.js", "file": "stub.js" } ],
+  "screens": [
+    { "name": "Login", "title": "Sign in", "init": { "__signedIn": false } },
+    { "name": "Home", "title": "Notes", "continue": true, "steps": [ { "click": "#signin" }, { "wait": ".card" } ] },
+    { "name": "Draft", "title": "New note", "continue": true, "steps": [ { "click": "#add" }, { "wait": "#draft" } ], "fullPage": true },
+    { "name": "HomeDirect", "title": "Notes (signed in)", "init": { "__signedIn": true }, "steps": [ { "wait": ".card" }, { "scrollTop": true } ] }
+  ],
+  "settings": { "schedule": "daily+merges", "cron": "CRON_TZ=Europe/London 52 7 * * *", "autoBuildLimit": 50000, "notify": ["chat"], "triggerId": null }
+}
